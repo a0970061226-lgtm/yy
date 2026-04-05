@@ -3,7 +3,7 @@
 
 我很乐意与其他游戏开发爱好者和 Python 学习者交流！
 
-- 📧 **Email**: [wsxedcrfv112@icloud.com](mailto:wsxedcrfv112@icloud.com)
+- 📧 **Email**: 
 - 💼 **LinkedIn**: [你的 LinkedIn](https://linkedin.com)
 - 🐦 **Twitter/X**: [@你的账号](https://twitter.com)
 - 💬 **Discord**: [你的 Discord 用户名]

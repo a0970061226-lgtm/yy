@@ -1,47 +1,72 @@
+import 'package:flutter/material.dart';
+import 'package:socket_io_client/socket_io_client.dart' as io;
 
-## 🤝 让我们联系
+void main() => runApp(MaterialApp(home: AuthPage(), theme: ThemeData.dark(), debugShowCheckedModeBanner: false));
 
-我很乐意与其他游戏开发爱好者和 Python 学习者交流！
+// --- 登入畫面 (已復原) ---
+class AuthPage extends StatefulWidget {
+  @override
+  _AuthPageState createState() => _AuthPageState();
+}
 
-- 📧 **Email**: 
-- 💼 **LinkedIn**: [你的 LinkedIn](https://linkedin.com)
-- 🐦 **Twitter/X**: [@你的账号](https://twitter.com)
-- 💬 **Discord**: [你的 Discord 用户名]
-- 🌐 **个人网站**: [你的网站链接]
+class _AuthPageState extends State<AuthPage> {
+  final uC = TextEditingController(), pC = TextEditingController();
+  late io.Socket socket;
 
-## 💡 有趣的事实
+  @override
+  void initState() {
+    super.initState();
+    socket = io.io('http://192.168.0.45:3000', <String, dynamic>{'transports': ['websocket']});
+    socket.on('auth', (d) {
+      if (d['success']) {
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => AdminPage(socket: socket)));
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("登入失敗")));
+      }
+    });
+  }
 
-- 🎮 我最喜欢的游戏是：[你最喜欢的游戏]
-- 🎯 启发我学习游戏开发的原因：[你的原因]
-- 💪 我的学习座右铭：**持之以恒，每天进步**
+  @override
+  Widget build(BuildContext context) => Scaffold(body: Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+    SizedBox(width: 250, child: TextField(controller: uC, decoration: InputDecoration(labelText: "帳號"))),
+    SizedBox(width: 250, child: TextField(controller: pC, decoration: InputDecoration(labelText: "密碼"), obscureText: true)),
+    ElevatedButton(onPressed: () => socket.emit('login', {'user': uC.text, 'password': pC.text}), child: Text("登入"))
+  ])));
+}
 
-## 📌 初学者的学习建议
+// --- 審核畫面 ---
+class AdminPage extends StatefulWidget {
+  final io.Socket socket;
+  AdminPage({required this.socket});
+  @override
+  _AdminPageState createState() => _AdminPageState();
+}
 
-*分享给其他初学者的提示：*
-- 🎯 从最简单的项目开始，不要急于求成
-- 🔄 先理解概念，再动手编码
-- 📚 阅读代码，学习他人的实现方式
-- 🤝 加入开发者社区，寻求帮助和反馈
-- 🎨 不要追求完美的美术，逻辑和机制最重要
-- 🚀 完成一个项目比开始十个项目更有价值
+class _AdminPageState extends State<AdminPage> {
+  List<String> pending = ['demo'];
 
-## 🎓 推荐学习顺序
+  void _showApprovalFlow(int index) {
+    showModalBottomSheet(context: context, builder: (_) => Column(mainAxisSize: MainAxisSize.min, children: [
+      ListTile(title: Text("1. 總管理"), onTap: () => _apply(index, '總管理')),
+      ListTile(title: Text("2. 永久會員"), onTap: () => _apply(index, '永久會員')),
+      ListTile(title: Text("3. 一般會員"), onTap: () => _apply(index, '一般會員')),
+      ListTile(title: Text("4. 體驗會員"), onTap: () => _apply(index, '體驗會員')),
+    ]));
+  }
 
-1. **第 1 步**: Python 基础（1-2 个月）
-2. **第 2 步**: 选择游戏框架（Pygame 或 Arcade）
-3. **第 3 步**: 完成官方教程（1 个月）
-4. **第 4 步**: 创建第一个小游戏（2-3 个月）
-5. **第 5 步**: 迭代和改进（持续）
+  void _apply(int idx, String role) {
+    widget.socket.emit('change_role', {'targetUser': pending[idx], 'newRole': role});
+    Navigator.pop(context);
+    setState(() => pending.removeAt(idx));
+  }
 
----
-
-**⭐ 欢迎浏览我的仓库，看看我的学习进度！**
-
-**如果你也在学习 Python 游戏开发，欢迎与我联系，一起学习和分享！**
-
-💻 *让我们一起创作令人惊喜的游戏吧！*
-
----
-
-*最后更新于 2026 年 4 月*# yy
-yy
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(title: Text("待審核清單")),
+    body: ListView.builder(itemCount: pending.length, itemBuilder: (_, i) => ListTile(
+      leading: CircleAvatar(child: Text("${i + 1}")),
+      title: Text("帳號: ${pending[i]}"),
+      onTap: () => _showApprovalFlow(i),
+    )),
+  );
+}
